@@ -1,6 +1,4 @@
-import numpy as np
 import torch
-import torch.nn.functional as F
 
 
 class DiceLoss(torch.nn.Module):
@@ -8,10 +6,51 @@ class DiceLoss(torch.nn.Module):
         super(DiceLoss, self).init()
 
     def forward(self, pred, target):
-        smooth = 1.
-        iflat = pred.contiguous().view(-1)
-        tflat = target.contiguous().view(-1)
-        intersection = (iflat * tflat).sum()
-        A_sum = torch.sum(iflat * iflat)
-        B_sum = torch.sum(tflat * tflat)
-        return 1 - ((2. * intersection + smooth) / (A_sum + B_sum + smooth))
+        intersection = pred * target
+        tp = torch.sum(intersection)
+        fp = torch.sum(pred - intersection)
+        fn = torch.sum(target - intersection)
+        return 1 - 2 * tp / (2 * tp + fn + fp)
+
+
+def accuracy_score(pred, target):
+    intersection = pred * target
+    tp = torch.sum(intersection).data.item()
+    fp = torch.sum(pred - intersection).data.item()
+    fn = torch.sum(target - intersection).data.item()
+    n = pred.shape[0] * pred.shape[1] * pred.shape[2] * pred.shape[3]
+    tn = n - fp - fn - tp
+    return (tp + tn) / (tp + tn + fp + fn) * 100
+
+
+def dice_score(pred, target):
+    intersection = pred * target
+    tp = torch.sum(intersection).data.item()
+    fp = torch.sum(pred - intersection).data.item()
+    fn = torch.sum(target - intersection).data.item()
+    return 100 * 2 * tp / (2 * tp + fp + fn)
+
+
+def jaccard_index(pred, target):
+    intersection = pred * target
+    tp = torch.sum(intersection).data.item()
+    fp = torch.sum(pred - intersection).data.item()
+    fn = torch.sum(target - intersection).data.item()
+    return tp / (tp + fp + fn) * 100
+
+
+def sensitivity_score(pred, target):
+    intersection = pred * target
+    tp = torch.sum(intersection).data.item()
+    fn = torch.sum(target - intersection).data.item()
+    return tp / (tp + fn) * 100
+
+
+def specificity_score(pred, target):
+    intersection = pred * target
+    tp = torch.sum(intersection).data.item()
+    fn = torch.sum(target - intersection).data.item()
+    fp = torch.sum(pred - intersection).data.item()
+    n = pred.shape[0] * pred.shape[1] * pred.shape[2] * pred.shape[3]
+    tn = n - fp - fn - tp
+    return tn / (tn + fp) * 100
