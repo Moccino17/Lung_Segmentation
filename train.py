@@ -1,13 +1,14 @@
 import torch
 from tqdm import tqdm
 from PIL import Image
-from loss import DiceLoss
+from loss import *
 from os.path import join
 import numpy as np
 from copy import deepcopy
 from skimage.io import imshow_collection
 import matplotlib.pyplot as plt
 import sys
+import cv2
 
 
 def validate_network(network, validation_data_path, errFn=DiceLoss()):
@@ -20,9 +21,10 @@ def validate_network(network, validation_data_path, errFn=DiceLoss()):
         mask_path = join(validation_data_path, 'mask', 'cxrmask_' + str(img_number) + '.jpeg')
         image = np.array(Image.open(image_path).convert('L'))
         mask = np.array(Image.open(mask_path).convert('L'))
+        mask = cv2.GaussianBlur(mask,(3,3), cv2.BORDER_DEFAULT) > 125
         image = torch.Tensor(image).view(1, 1, image.shape[0], image.shape[1]).float().cuda()
         mask = torch.Tensor(mask).view(image.shape).float().cuda()
-        loss += errFn(network(image), mask).data.item()
+        loss += dice_score(mask, network(image))
 
     return loss / num_images
 
@@ -66,5 +68,4 @@ def train_network(network,
                 #                    first_slice(output),
                 #                    first_slice(images * (1-masks))])
                 # plt.show()
-                # sys.exit(12)
-                torch.save(network.state_dict(), 'saved_networks/L2Loss.pth', _use_new_zipfile_serialization=False)
+                torch.save(network.state_dict(), 'saved_networks/testNet.pth', _use_new_zipfile_serialization=False)
