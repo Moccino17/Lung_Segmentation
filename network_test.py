@@ -8,17 +8,17 @@ from PIL import Image
 import numpy as np
 import cv2
 from random import randint
-from networks import TestNet
+from baseline_network import BaselineNetwork
 from tqdm import tqdm
 
-test_data_path = '/home/mohamed/Desktop/Lung_Segmentation/ChestXray-256/test'
+test_data_path = '/home/dell/Desktop/Lung_Segmentation/ChestXray-256/test'
 
 
 def load_image(image_number):
     _image_name = 'cxrimage_' + str(image_number) + '.png'
     image_path = os.path.join(test_data_path, 'image', _image_name)
-    image = np.array(Image.open(image_path).convert('L'))
-    return torch.FloatTensor(image).view(1, 1, image.shape[0], image.shape[1]).cuda()
+    image = np.array(Image.open(image_path))
+    return torch.FloatTensor(image).view(1, 3, image.shape[0], image.shape[1]).cuda()
 
 
 def load_mask(mask_number):
@@ -92,9 +92,9 @@ def print_network_test_results(network, report_name):
 
 
 if __name__ == '__main__':
-    network_class = TestNet
-    _network_path = './saved_networks/testNet.pth'
-    report_name = 'TestNet1'
+    network_class = BaselineNetwork
+    _network_path = './saved_networks/baseline.pth'
+    report_name = 'Baseline'
 
     network = network_class().cuda()
     network.load_state_dict(torch.load(_network_path))
